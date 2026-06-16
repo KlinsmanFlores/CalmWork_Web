@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Briefcase, Lock, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function FormularioReportePage() {
+function FormularioReporte() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tipo = searchParams.get("tipo") || "sobrecarga";
@@ -192,5 +192,13 @@ export default function FormularioReportePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function FormularioReportePage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-[#6D4AFF]">Cargando formulario...</div>}>
+      <FormularioReporte />
+    </Suspense>
   );
 }
