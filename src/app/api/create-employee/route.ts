@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-// Inicializamos el cliente de Supabase pero con la clave de administrador (Service Role Key)
-// Esto permite saltarse las reglas de seguridad y crear usuarios sin cerrar la sesión del admin.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+// Inicializamos el cliente de Supabase dentro de la ruta para evitar errores en tiempo de construcción (build)
+const getSupabaseAdmin = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
   {
     auth: {
       autoRefreshToken: false,
@@ -19,6 +18,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { email, password, department, first_name, last_name } = await request.json();
 
     if (!email || !password || !first_name || !last_name) {
