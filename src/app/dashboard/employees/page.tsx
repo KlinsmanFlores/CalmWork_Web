@@ -85,8 +85,7 @@ export default function EmployeesPage() {
     <div className="space-y-6 relative">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Trabajadores</h2>
-          <p className="text-slate-500">Gestión de personal y estado de evaluaciones.</p>
+          <h2 className="text-3xl font-extrabold text-[#246672] tracking-tight">Gestión de Trabajadores</h2>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
