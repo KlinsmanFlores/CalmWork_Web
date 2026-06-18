@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, AlertTriangle, MessageSquare, LogOut, FileText, Shield, Calendar, ChevronDown } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, Users, AlertTriangle, MessageSquare, LogOut, FileText, Shield, Calendar, ChevronDown, Inbox } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDateOpen, setIsDateOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -26,13 +28,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
   const navigation = [
     { name: "Dashboard General", href: "/dashboard", icon: LayoutDashboard },
     { name: "Gestión de Trabajadores", href: "/dashboard/employees", icon: Users },
-    { name: "Diagnóstico Psicosocial", href: "/dashboard/copsoq", icon: Users },
+    { name: "Diagnóstico Psicosocial", href: "/dashboard/copsoq", icon: FileText },
     { name: "Gestión de Incidencias", href: "/dashboard/reports", icon: AlertTriangle },
     { name: "Análisis Organizacional", href: "/dashboard/departments", icon: Users },
-    { name: "Alertas Predictivas IA", href: "/dashboard/insights", icon: MessageSquare },
+    { name: "Buzón de Análisis", href: "/dashboard/alerts", icon: Inbox },
     { name: "Seguimiento de Casos", href: "/dashboard/cases", icon: Shield },
   ];
 
@@ -48,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <div className="flex-1 py-6 px-4 space-y-1">
+        <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -69,61 +80,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </div>
 
+        {/* User Profile at bottom of sidebar */}
+        <div className="p-4 border-t border-white/10 mt-auto relative" ref={profileRef}>
+          <div 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors group"
+          >
+            <div className="h-10 w-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-bold mr-3 shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              RH
+            </div>
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <span className="text-sm font-bold text-white leading-tight truncate">Analista RR.HH.</span>
+              <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold truncate">Administrador</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 ml-2 shrink-0 text-white/70 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+          </div>
+
+          {isProfileOpen && (
+            <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
+              <div className="px-4 py-3 border-b border-slate-100">
+                <p className="text-sm font-bold text-slate-800 truncate">Analista RR.HH.</p>
+                <p className="text-xs text-slate-500 mt-0.5 truncate">admin@calmwork.com</p>
+              </div>
+              <div className="py-1">
+                <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  <LayoutDashboard className="w-4 h-4 mr-3 text-slate-400 shrink-0" />
+                  Mi Perfil
+                </Link>
+                <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  <Shield className="w-4 h-4 mr-3 text-slate-400 shrink-0" />
+                  Configuración
+                </Link>
+              </div>
+              <div className="border-t border-slate-100 py-1">
+                <button 
+                  onClick={handleLogout}
+                  className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-3 shrink-0" />
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header (Mobile menu placeholder, Admin info) */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-800">Centro de Analítica RR.HH.</h1>
-          </div>
-          <div className="flex items-center gap-6">
-            
-            {/* User Profile Dropdown */}
-            <div className="relative" ref={profileRef}>
-              <div 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center pl-6 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity group"
-              >
-                <div className="h-10 w-10 rounded-full bg-[#246672] flex items-center justify-center text-white font-bold mr-3 shadow-sm group-hover:scale-105 transition-transform">
-                  RH
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-700 leading-tight">Analista RR.HH.</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Administrador</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 ml-4 text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
-              </div>
-
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <p className="text-sm font-bold text-slate-800">Analista RR.HH.</p>
-                    <p className="text-xs text-slate-500 mt-0.5">admin@calmwork.com</p>
-                  </div>
-                  <div className="py-1">
-                    <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                      <LayoutDashboard className="w-4 h-4 mr-3 text-slate-400" />
-                      Mi Perfil
-                    </Link>
-                    <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                      <Shield className="w-4 h-4 mr-3 text-slate-400" />
-                      Configuración
-                    </Link>
-                  </div>
-                  <div className="border-t border-slate-100 py-1">
-                    <button className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors">
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">

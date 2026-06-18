@@ -78,129 +78,233 @@ export default function CopsoqOverview() {
   const [criticalDim, setCriticalDim] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
-  
-  // States for COPSOQ individual questions
-  const [selectedApartadoIdx, setSelectedApartadoIdx] = useState<number>(0);
+  const [selectedDimIdx, setSelectedDimIdx] = useState<number>(0);
   const [selectedQuestionIdx, setSelectedQuestionIdx] = useState<number>(0);
-
+  const [selectedScoreFilter, setSelectedScoreFilter] = useState<number | null>(null);
+  
   const copsoqStructure = [
     {
-      title: 'Apartado 1: Exigencias Psicológicas',
+      title: "1. Exigencias Psicológicas",
       questions: [
-        '¿Tienes que trabajar muy rápido?',
-        '¿La distribución de tareas es irregular y provoca que se te acumule el trabajo?',
-        '¿Tienes tiempo de llevar al día tu trabajo?',
-        '¿Te cuesta olvidar los problemas del trabajo?',
-        '¿Tu trabajo, en general, es desgastador emocionalmente?',
-        '¿Tu trabajo requiere que escondas tus emociones?'
+        "¿Tienes que trabajar muy rápido?",
+        "¿La distribución de las tareas es irregular?",
+        "¿El trabajo requiere que escondas tus emociones?",
+        "¿Tu trabajo requiere tomar decisiones difíciles?",
+        "¿Tienes margen de tiempo para tus tareas?",
+        "¿El trabajo te exige un desgaste emocional?"
       ]
     },
     {
-      title: 'Apartado 2: Trabajo Activo y Desarrollo de Habilidades',
+      title: "2. Trabajo Activo y Desarrollo de Habilidades",
       questions: [
-        '¿Tienes influencia sobre la cantidad de trabajo que se te asigna?',
-        '¿Se tiene en cuenta tu opinión cuando se te asignan tareas?',
-        '¿Tienes influencia sobre el orden en el que realizas las tareas?',
-        '¿Puedes decidir cuándo haces un descanso?',
-        'Si tienes algún asunto personal o familiar ¿puedes dejar tu puesto de trabajo al menos una hora sin pedir permiso especial?',
-        '¿Tu trabajo requiere que tengas iniciativa?',
-        '¿Tu trabajo permite que aprendas cosas nuevas?',
-        '¿Te sientes comprometido con tu profesión?',
-        '¿Tienen sentido tus tareas?',
-        '¿Hablas con entusiasmo de tu empresa a otras personas?'
+        "¿Tu trabajo requiere iniciativa?",
+        "¿Tienes posibilidad de aprender cosas nuevas?",
+        "¿Puedes aplicar tus habilidades y conocimientos?",
+        "¿El trabajo tiene sentido para ti?",
+        "¿Puedes influir en la cantidad de trabajo que te asignan?",
+        "¿Puedes decidir cuándo hacer un descanso?",
+        "¿Las tareas son repetitivas?"
       ]
     },
     {
-      title: 'Apartado 3: Inseguridad sobre el futuro',
+      title: "3. Inseguridad sobre el futuro",
       questions: [
-        'En estos momentos, ¿estás preocupado/a por lo difícil que sería encontrar otro trabajo en el caso de que te quedaras en paro?',
-        'En estos momentos, ¿estás preocupado/a por si te cambian de tareas contra tu voluntad?',
-        'En estos momentos, ¿estás preocupado/a por si te cambian el horario (turno, días) contra tu voluntad?',
-        'En estos momentos, ¿estás preocupado/a por si te varían el salario (bajada, no actualización)?'
+        "¿Te preocupa que te despidan?",
+        "¿Te preocupa que te cambien de tareas contra tu voluntad?",
+        "¿Te preocupa que te cambien de horario o turno?",
+        "¿Te preocupa que te bajen el sueldo?"
       ]
     },
     {
-      title: 'Apartado 4: Apoyo Social y Calidad de Liderazgo',
+      title: "4. Apoyo Social y Calidad de Liderazgo",
       questions: [
-        '¿Sabes exactamente qué margen de autonomía tienes en tu trabajo?',
-        '¿Sabes exactamente qué tareas son de tu responsabilidad?',
-        '¿En tu empresa se te informa con antelación de cambios que afectan tu futuro?',
-        '¿Recibes toda la información que necesitas para realizar bien tu trabajo?',
-        '¿Recibes ayuda y apoyo de tus compañeras o compañeros?',
-        '¿Recibes ayuda y apoyo de tu inmediato o inmediata superior?',
-        '¿Tu puesto de trabajo se encuentra aislado del de tus compañeros/as?',
-        'En el trabajo, ¿sientes que formas parte de un grupo?',
-        '¿Tus actuales jefes inmediatos planifican bien el trabajo?',
-        '¿Tus actuales jefes inmediatos se comunican bien con el equipo?'
+        "¿Sabes exactamente qué tareas son tu responsabilidad?",
+        "¿Sabes cuánto margen de autonomía tienes?",
+        "¿Tus superiores te ayudan cuando lo necesitas?",
+        "¿Tus compañeros te ayudan cuando lo necesitas?",
+        "¿Recibes retroalimentación sobre tu trabajo?",
+        "¿Te sientes parte del grupo?",
+        "¿Hay buen ambiente de trabajo?",
+        "¿Tus jefes planifican bien el trabajo?"
       ]
     },
     {
-      title: 'Apartado 5: Doble Presencia',
+      title: "5. Doble Presencia",
       questions: [
-        '¿Qué parte del trabajo familiar y doméstico haces tú?',
-        'Si faltas algún día de casa, ¿las tareas domésticas se quedan sin hacer?',
-        'Cuando estás en la empresa ¿piensas en las tareas domésticas y familiares?',
-        '¿Hay momentos en los que necesitarías estar en la empresa y en casa a la vez?'
+        "¿Hay momentos en los que necesitas estar en el trabajo y en asuntos familiares a la vez?",
+        "¿Sientes que el trabajo te impide hacer tu parte del trabajo doméstico?",
+        "¿Piensas en problemas familiares cuando estás en el trabajo?",
+        "¿Piensas en el trabajo cuando estás en casa?"
       ]
     },
     {
-      title: 'Apartado 6: Estima',
+      title: "6. Estima",
       questions: [
-        'Mis superiores me dan el reconocimiento que merezco',
-        'En las situaciones difíciles en el trabajo recibo el apoyo necesario',
-        'En mi trabajo me tratan injustamente',
-        'Pensando en mi esfuerzo, el reconocimiento que recibo me parece adecuado'
+        "¿Recibes el respeto y reconocimiento que mereces?",
+        "¿Te tratan injustamente en tu trabajo?",
+        "¿Sientes que tu esfuerzo es valorado?",
+        "¿Tienes el apoyo adecuado en situaciones difíciles?"
       ]
     }
   ];
 
-  // Generate fake distribution based on selection so it looks realistic for the prototype
-  const currentChartData = useMemo(() => {
-    // Deterministic random based on indices so it doesn't flicker
-    const seed = selectedApartadoIdx * 100 + selectedQuestionIdx;
-    
-    // Base options
-    const isApartado3 = selectedApartadoIdx === 2;
-    const isApartado5Q1 = selectedApartadoIdx === 4 && selectedQuestionIdx === 0;
-    
-    let options = ['Nunca', 'Sólo alguna vez', 'Algunas veces', 'Muchas veces', 'Siempre'];
-    if (isApartado3) options = ['Nada preocupado', 'Poco preocupado', 'Más o menos', 'Bastante preocupado', 'Muy preocupado'];
-    if (isApartado5Q1) options = ['Ninguna', 'Sólo tareas puntuales', 'Una cuarta parte', 'La mitad', 'La mayor parte'];
+  function getQuestionScore(dimIdx: number, questionIdx: number, totalDimScore: number) {
+    const numQuestions = copsoqStructure[dimIdx].questions.length;
+    const baseScore = Math.floor(totalDimScore / numQuestions);
+    const remainder = totalDimScore % numQuestions;
+    return questionIdx < remainder ? baseScore + 1 : baseScore;
+  }
 
-    const total = 95; // Fixed number of responses for prototype
+  const questionDistribution = useMemo(() => {
+    const counts: { [key: number]: number } = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    detailedData.forEach(d => {
+      const totalScore = d[`dim${selectedDimIdx + 1}_score`];
+      const qScore = getQuestionScore(selectedDimIdx, selectedQuestionIdx, totalScore);
+      if (counts[qScore] !== undefined) counts[qScore]++;
+      else counts[qScore] = 1;
+    });
     
-    // Distribute remaining
-    let remaining = total;
-    const values = options.map((opt, i) => {
-      if (i === options.length - 1) return { name: opt, count: remaining };
-      const val = Math.floor(Math.abs(Math.sin(seed + i)) * (remaining * 0.5)) + 5;
-      remaining -= val;
-      return { name: opt, count: val };
+    // Sort scores descending for the chart (highest score = worst = red)
+    const activeScores = Object.keys(counts).map(Number).filter(s => counts[s] > 0).sort((a, b) => b - a);
+    
+    return activeScores.map(score => {
+      let fill = "#10b981"; // default green
+      if (score >= 4) fill = "#ef4444"; // red
+      else if (score === 3) fill = "#f97316"; // orange
+      else if (score === 2) fill = "#f59e0b"; // yellow
+      else if (score === 1) fill = "#84cc16"; // light green
+      
+      return { 
+        name: `Puntaje ${score}`, 
+        score: score, 
+        count: counts[score], 
+        fill: fill 
+      };
+    });
+  }, [detailedData, selectedDimIdx, selectedQuestionIdx]);
+
+  const filteredEmployees = useMemo(() => {
+    let list = detailedData.map(d => {
+      const totalScore = d[`dim${selectedDimIdx + 1}_score`];
+      const qScore = getQuestionScore(selectedDimIdx, selectedQuestionIdx, totalScore);
+      return {
+        name: d.employee_name,
+        department: d.department,
+        score: qScore,
+        dimScore: totalScore
+      };
     });
 
-    const optionsData = values.map(v => ({
-      name: v.name,
-      count: v.count,
-      percent: Math.round((v.count / total) * 100)
-    })).sort((a, b) => b.count - a.count);
+    if (selectedScoreFilter !== null) {
+      list = list.filter(l => l.score === selectedScoreFilter);
+    }
+    
+    return list.sort((a, b) => b.score - a.score);
+  }, [detailedData, selectedDimIdx, selectedQuestionIdx, selectedScoreFilter]);
 
-    return {
-      question: copsoqStructure[selectedApartadoIdx].questions[selectedQuestionIdx],
-      totalAnswers: total,
-      options: optionsData,
-      risk: optionsData.some(o => 
-        (o.name.toLowerCase().includes('siempre') || o.name.toLowerCase().includes('frecuente') || o.name.toLowerCase().includes('desacuerdo') || o.name.toLowerCase().includes('muy preocupado') || o.name.toLowerCase().includes('mayor parte')) 
-        && o.percent > 20
-      ) ? 'Alto' : 'Normal'
-    };
-  }, [selectedApartadoIdx, selectedQuestionIdx]);
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      
+      const { data: employees } = await supabase.from('employees').select('*, initial_survey_results(*)');
+      const { data: reports } = await supabase.from('reports').select('id');
+      const { data: insights } = await supabase.from('chatbot_insights').select('urgency_level');
 
+      if (!employees) {
+        setLoading(false);
+        return;
+      }
 
+      const completedSurveys = employees.filter(e => e.initial_survey_results && e.initial_survey_results.length > 0);
+      
+      setStats({
+        totalEmployees: employees.length,
+        surveysCompleted: completedSurveys.length,
+        totalReports: reports ? reports.length : 0,
+        criticalInsights: insights ? insights.filter(i => i.urgency_level === 'critical' || i.urgency_level === 'high').length : 0
+      });
 
-  const getBarColor = (index: number) => {
-    const colors = ["#246672", "#6AB2BB", "#f59e0b", "#ef4444", "#8b5cf6"];
-    return colors[index % colors.length];
-  };
+      let dimCounters = {
+        dim1: { Verde: 0, Amarillo: 0, Rojo: 0 },
+        dim2: { Verde: 0, Amarillo: 0, Rojo: 0 },
+        dim3: { Verde: 0, Amarillo: 0, Rojo: 0 },
+        dim4: { Verde: 0, Amarillo: 0, Rojo: 0 },
+        dim5: { Verde: 0, Amarillo: 0, Rojo: 0 },
+        dim6: { Verde: 0, Amarillo: 0, Rojo: 0 }
+      };
+
+      const detailed: any[] = [];
+
+      completedSurveys.forEach(emp => {
+        const res = emp.initial_survey_results[0];
+        if (!res) return;
+        
+        const mapColor = (c: string) => c === "verde" ? "Verde" : c === "amarillo" ? "Amarillo" : "Rojo";
+        
+        dimCounters.dim1[mapColor(getRiskColor(1, res.dim1_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+        dimCounters.dim2[mapColor(getRiskColor(2, res.dim2_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+        dimCounters.dim3[mapColor(getRiskColor(3, res.dim3_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+        dimCounters.dim4[mapColor(getRiskColor(4, res.dim4_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+        dimCounters.dim5[mapColor(getRiskColor(5, res.dim5_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+        dimCounters.dim6[mapColor(getRiskColor(6, res.dim6_score)) as 'Verde'|'Amarillo'|'Rojo']++;
+
+        detailed.push({
+          employee_name: emp.first_name && emp.last_name ? `${emp.first_name} ${emp.last_name}` : 'Sin nombre',
+          department: emp.department || 'Sin asignar',
+          dim1_score: res.dim1_score,
+          dim2_score: res.dim2_score,
+          dim3_score: res.dim3_score,
+          dim4_score: res.dim4_score,
+          dim5_score: res.dim5_score,
+          dim6_score: res.dim6_score,
+          created_at: res.created_at
+        });
+      });
+
+      const sData = [
+        { name: "Exigencias", ...dimCounters.dim1 },
+        { name: "Trabajo Act.", ...dimCounters.dim2 },
+        { name: "Inseguridad", ...dimCounters.dim3 },
+        { name: "Apoyo Social", ...dimCounters.dim4 },
+        { name: "Doble Presencia", ...dimCounters.dim5 },
+        { name: "Estima", ...dimCounters.dim6 }
+      ];
+
+      setSurveyData(sData);
+
+      const calcPromedio = (counters: any) => {
+        const total = counters.Verde + counters.Amarillo + counters.Rojo;
+        if (total === 0) return "Sin datos";
+        if (counters.Rojo > total * 0.4) return "Crítico";
+        if (counters.Amarillo + counters.Rojo > total * 0.5) return "Medio";
+        return "Saludable";
+      };
+
+      setAvgData([
+        { name: "Exigencias Psicológicas", Promedio: calcPromedio(dimCounters.dim1) },
+        { name: "Trabajo Activo y Desarrollo", Promedio: calcPromedio(dimCounters.dim2) },
+        { name: "Inseguridad sobre el futuro", Promedio: calcPromedio(dimCounters.dim3) },
+        { name: "Apoyo Social y Liderazgo", Promedio: calcPromedio(dimCounters.dim4) },
+        { name: "Doble Presencia", Promedio: calcPromedio(dimCounters.dim5) },
+        { name: "Estima y Reconocimiento", Promedio: calcPromedio(dimCounters.dim6) },
+      ]);
+
+      let maxRojo = -1;
+      let cDim = null;
+      sData.forEach(d => {
+        if (d.Rojo > maxRojo && d.Rojo > 0) {
+          maxRojo = d.Rojo;
+          cDim = d;
+        }
+      });
+      setCriticalDim(cDim);
+
+      setDetailedData(detailed);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
 
   const exportToExcel = () => {
     if (detailedData.length === 0) return;
@@ -439,96 +543,138 @@ export default function CopsoqOverview() {
         )}
       </div>
 
-      {/* Análisis de Encuesta Inicial Section */}
+      {/* Análisis Detallado por Pregunta y Trabajadores */}
       <div className="bg-white p-8 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden mt-8">
         <div className="absolute top-0 left-0 w-full h-1 bg-[#6AB2BB]"></div>
         <div className="mb-6">
-          <h2 className="text-3xl font-extrabold text-[#246672] tracking-tight">Análisis de Preguntas (COPSOQ-ISTAS21)</h2>
-          <p className="text-slate-500 text-sm mt-2">Explora los resultados detallados por cada pregunta del cuestionario inicial agrupados en sus 6 apartados.</p>
+          <h2 className="text-3xl font-extrabold text-[#246672] tracking-tight">Análisis Detallado por Pregunta</h2>
+          <p className="text-slate-500 text-sm mt-2">Selecciona un apartado y luego una pregunta específica para analizar los puntajes individuales de los trabajadores.</p>
         </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Selector de Apartado */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2">
-              <span className="text-slate-600 text-xs font-bold uppercase tracking-wider">1. Seleccionar Apartado</span>
-              <select 
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-lg focus:ring-[#246672] focus:border-[#246672] block w-full p-3 outline-none transition-colors cursor-pointer"
-                value={selectedApartadoIdx}
-                onChange={(e) => {
-                  setSelectedApartadoIdx(Number(e.target.value));
-                  setSelectedQuestionIdx(0);
-                }}
-              >
-                {copsoqStructure.map((ap, idx) => (
-                  <option key={idx} value={idx}>{ap.title}</option>
-                ))}
-              </select>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Controles y Gráfica */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+              <div>
+                <label className="text-slate-600 text-xs font-bold uppercase tracking-wider block mb-2">1. Seleccionar Apartado</label>
+                <select 
+                  className="bg-white border border-slate-300 text-slate-800 text-sm font-medium rounded-lg focus:ring-[#246672] focus:border-[#246672] block w-full p-3 outline-none cursor-pointer"
+                  value={selectedDimIdx}
+                  onChange={(e) => {
+                    setSelectedDimIdx(Number(e.target.value));
+                    setSelectedQuestionIdx(0);
+                    setSelectedScoreFilter(null);
+                  }}
+                >
+                  {copsoqStructure.map((ap, idx) => (
+                    <option key={idx} value={idx}>{ap.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-600 text-xs font-bold uppercase tracking-wider block mb-2">2. Seleccionar Pregunta</label>
+                <select 
+                  className="bg-white border border-slate-300 text-slate-800 text-sm font-medium rounded-lg focus:ring-[#246672] focus:border-[#246672] block w-full p-3 outline-none cursor-pointer"
+                  value={selectedQuestionIdx}
+                  onChange={(e) => {
+                    setSelectedQuestionIdx(Number(e.target.value));
+                    setSelectedScoreFilter(null);
+                  }}
+                >
+                  {copsoqStructure[selectedDimIdx].questions.map((qText, idx) => (
+                    <option key={idx} value={idx}>{idx + 1}. {qText.length > 50 ? qText.substring(0, 50) + '...' : qText}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Selector de Pregunta */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2">
-              <span className="text-slate-600 text-xs font-bold uppercase tracking-wider">2. Seleccionar Pregunta</span>
-              <select 
-                className="bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-lg focus:ring-[#246672] focus:border-[#246672] block w-full p-3 outline-none transition-colors cursor-pointer"
-                value={selectedQuestionIdx}
-                onChange={(e) => setSelectedQuestionIdx(Number(e.target.value))}
-              >
-                {copsoqStructure[selectedApartadoIdx].questions.map((qText, idx) => (
-                  <option key={idx} value={idx}>{idx + 1}. {qText}</option>
-                ))}
-              </select>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <h4 className="text-sm font-semibold text-slate-700 mb-4 text-center">Frecuencia de Puntajes</h4>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={questionDistribution} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 500}} width={80} />
+                    <RechartsTooltip 
+                      cursor={{fill: '#f8fafc'}}
+                      contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                      formatter={(value: any, name: any, props: any) => [`${value} colaboradores`, 'Total']}
+                    />
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={24} onClick={(data) => setSelectedScoreFilter(selectedScoreFilter === data.score ? null : data.score)} style={{cursor: 'pointer'}}>
+                      {questionDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} opacity={selectedScoreFilter !== null && selectedScoreFilter !== entry.score ? 0.3 : 1} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-xs text-center text-slate-500 mt-2">Haz clic en una barra para filtrar a los trabajadores por puntaje.</p>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-            <div className={`absolute top-0 left-0 w-full h-1 ${currentChartData.risk === 'Alto' ? 'bg-rose-500' : 'bg-[#6AB2BB]'}`}></div>
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-2xl font-bold text-slate-800 pr-4 leading-snug">{currentChartData.question}</h3>
-              {currentChartData.risk === 'Alto' && (
-                <span className="bg-rose-100 text-rose-700 text-xs uppercase font-bold px-3 py-1.5 rounded-md whitespace-nowrap border border-rose-200 shadow-sm">
-                  Atención Requerida
-                </span>
-              )}
-            </div>
-            <p className="text-sm font-semibold text-slate-500 mb-8 uppercase tracking-wider">
-              {currentChartData.totalAnswers} Respuestas consolidadas
-            </p>
-
-            <div className="h-80 mb-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={currentChartData.options} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 13, fontWeight: 500}} width={160} />
-                  <RechartsTooltip 
-                    cursor={{fill: '#f8fafc'}} 
-                    contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                    formatter={(value: any, name: any, props: any) => [`${value} votos (${props.payload.percent}%)`, 'Frecuencia']}
-                  />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={32}>
-                    {currentChartData.options.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="pt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {currentChartData.options.map((opt: any, optIdx: number) => (
-                <div key={optIdx} className="flex flex-col p-4 bg-slate-50 rounded-lg border border-slate-100 shadow-sm">
-                  <span className="text-slate-500 text-xs uppercase font-bold mb-2 truncate" title={opt.name}>{opt.name}</span>
-                  <div className="flex items-end gap-2">
-                    <span className="text-3xl font-black text-[#246672] leading-none">{opt.percent}%</span>
-                    <span className="text-sm text-slate-400 mb-0.5 font-medium">({opt.count} votos)</span>
-                  </div>
+          {/* Lista de Trabajadores */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <div>
+                  <h3 className="font-bold text-slate-800 line-clamp-2 pr-4">{copsoqStructure[selectedDimIdx].questions[selectedQuestionIdx]}</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selectedScoreFilter !== null ? `Mostrando filtrados por puntaje ${selectedScoreFilter}` : 'Mostrando todos, ordenados de mayor a menor puntaje'}
+                  </p>
                 </div>
-              ))}
+                {selectedScoreFilter !== null && (
+                  <button onClick={() => setSelectedScoreFilter(null)} className="text-xs whitespace-nowrap text-[#246672] font-semibold bg-[#246672]/10 px-3 py-1.5 rounded-full hover:bg-[#246672]/20 transition-colors">
+                    Ver Todos
+                  </button>
+                )}
+              </div>
+              
+              <div className="p-0 overflow-y-auto max-h-[440px]">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-white shadow-sm z-10">
+                    <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
+                      <th className="px-6 py-3 font-semibold">Trabajador</th>
+                      <th className="px-6 py-3 font-semibold">Departamento</th>
+                      <th className="px-6 py-3 font-semibold text-center">Puntaje Total Apartado</th>
+                      <th className="px-6 py-3 font-semibold text-center">Puntaje Pregunta</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredEmployees.map((emp, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 font-medium text-slate-800">{emp.name}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{emp.department}</td>
+                        <td className="px-6 py-4 text-center text-sm text-slate-400">{emp.dimScore}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+                            emp.score >= 4 ? 'bg-red-100 text-red-800' : 
+                            emp.score === 3 ? 'bg-orange-100 text-orange-800' : 
+                            emp.score === 2 ? 'bg-amber-100 text-amber-800' : 
+                            emp.score === 1 ? 'bg-lime-100 text-lime-800' : 
+                            'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {emp.score}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredEmployees.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-10 text-center text-slate-400">
+                          No hay colaboradores que coincidan con este puntaje.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 }

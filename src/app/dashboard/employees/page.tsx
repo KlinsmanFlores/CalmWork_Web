@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, CheckCircle2, XCircle, X } from "lucide-react";
+import { Users, CheckCircle2, XCircle, X, Search, Filter } from "lucide-react";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters
+  const [searchName, setSearchName] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState("");
+  const [filterSurvey, setFilterSurvey] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +46,20 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  const filteredEmployees = employees.filter((emp) => {
+    if (searchName) {
+      const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
+      if (!fullName.includes(searchName.toLowerCase())) return false;
+    }
+    if (filterDepartment && emp.department !== filterDepartment) return false;
+    if (filterSurvey === "completed" && !emp.has_completed_initial_survey) return false;
+    if (filterSurvey === "pending" && emp.has_completed_initial_survey) return false;
+    if (filterDate) {
+      if (!emp.created_at.startsWith(filterDate)) return false;
+    }
+    return true;
+  });
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +117,67 @@ export default function EmployeesPage() {
         </button>
       </div>
 
+      {/* Filters Section */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-4 items-end">
+        <div className="flex-1 w-full relative">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Buscar por Nombre</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
+            </div>
+            <input 
+              type="text"
+              placeholder="Ej: Juan Pérez"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="pl-9 w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm bg-slate-50"
+            />
+          </div>
+        </div>
+        
+        <div className="w-full lg:w-48">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Departamento</label>
+          <select 
+            value={filterDepartment}
+            onChange={(e) => setFilterDepartment(e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm bg-slate-50"
+          >
+            <option value="">Todos</option>
+            <option value="Operaciones">Operaciones</option>
+            <option value="Ventas">Ventas</option>
+            <option value="Tecnología (TI)">Tecnología (TI)</option>
+            <option value="Recursos Humanos">Recursos Humanos</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Finanzas">Finanzas</option>
+            <option value="Administración">Administración</option>
+            <option value="Legal">Legal</option>
+          </select>
+        </div>
+
+        <div className="w-full lg:w-48">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Encuesta Inicial</label>
+          <select 
+            value={filterSurvey}
+            onChange={(e) => setFilterSurvey(e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm bg-slate-50"
+          >
+            <option value="">Todos</option>
+            <option value="completed">Completado</option>
+            <option value="pending">Pendiente</option>
+          </select>
+        </div>
+
+        <div className="w-full lg:w-48">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fecha de Registro</label>
+          <input 
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm bg-slate-50"
+          />
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -114,14 +196,14 @@ export default function EmployeesPage() {
                     <div className="animate-pulse flex justify-center"><div className="h-6 w-6 border-b-2 border-teal-600 rounded-full animate-spin"></div></div>
                   </td>
                 </tr>
-              ) : employees.length === 0 ? (
+              ) : filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
-                    No hay trabajadores registrados.
+                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                    No se encontraron trabajadores con los filtros aplicados.
                   </td>
                 </tr>
               ) : (
-                employees.map((emp) => (
+                filteredEmployees.map((emp) => (
                   <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-slate-800">
                       <div className="flex flex-col">

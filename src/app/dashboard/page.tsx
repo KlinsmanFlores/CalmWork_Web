@@ -33,6 +33,7 @@ export default function DashboardHome() {
       const { data: reports } = await supabase.from('reports').select('*');
       const { data: insights } = await supabase.from('chatbot_insights').select('*, chatbot_sessions(department)');
       const { data: surveys } = await supabase.from('initial_survey_results').select('*, employees(department)');
+      const { data: modules } = await supabase.from('modules').select('*');
 
       // Process KPIs
       const now = new Date();
@@ -57,14 +58,13 @@ export default function DashboardHome() {
 
       const topDept = Object.keys(deptCounts).sort((a, b) => deptCounts[b] - deptCounts[a])[0] || 'N/A';
       
-      // Mock module names mapping
-      const modMap: Record<string, string> = {
-        '92955f3d-519c-4977-84bc-de4a06d15655': 'Acoso Laboral',
-        'c62ed6d5-acde-4c06-9d00-9c1fb8e94146': 'Sobrecarga de Trabajo',
-        '43a5c0b0-3375-474c-83b5-31f0e4b85750': 'Problemas Personales',
-        'c16cdcf9-22a7-47b2-8c9e-649ea94d03e5': 'Discriminación',
-        '271386a0-4ba4-494c-bbea-bb13aec166d4': 'Mejoras y Sugerencias'
-      };
+      // Dynamic module names mapping from DB
+      const modMap: Record<string, string> = {};
+      if (modules) {
+        modules.forEach(m => {
+          modMap[m.id] = m.title;
+        });
+      }
       const topModuleId = Object.keys(moduleCounts).sort((a, b) => moduleCounts[b] - moduleCounts[a])[0];
       const topModule = topModuleId ? (modMap[topModuleId] || 'Otros') : 'N/A';
 
