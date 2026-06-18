@@ -57,6 +57,7 @@ export default function AlertsInboxPage() {
         reports.forEach(r => {
           const dept = r.department;
           if (!dept || dept === 'Sin asignar') return;
+          if (r.status === 'resolved') return; // Excluir reportes ya resueltos
           if (new Date(r.created_at) >= last7Days) {
             deptReports[dept] = (deptReports[dept] || 0) + 1;
             totalRecent++;
@@ -85,6 +86,7 @@ export default function AlertsInboxPage() {
         insights.forEach(i => {
           const dept = i.chatbot_sessions?.department;
           if (!dept || dept === 'Sin asignar') return;
+          if (i.status === 'resolved') return; // Excluir alertas de IA resueltas
           if ((i.urgency_level === 'critical' || i.urgency_level === 'high') && new Date(i.created_at) >= last7Days) {
             deptInsights[dept] = (deptInsights[dept] || 0) + 1;
             totalInsights++;
@@ -271,7 +273,7 @@ export default function AlertsInboxPage() {
 
                   <div className="mt-6 flex justify-end">
                     <button className="text-sm font-bold text-teal-600 hover:text-teal-700 flex items-center">
-                      Asignar este plan a RR.HH. <ChevronRight className="w-4 h-4 ml-1" />
+                      Asignar este plan a Seguridad <ChevronRight className="w-4 h-4 ml-1" />
                     </button>
                   </div>
                 </div>

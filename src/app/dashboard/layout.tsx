@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Gestión de Trabajadores", href: "/dashboard/employees", icon: Users },
     { name: "Diagnóstico Psicosocial", href: "/dashboard/copsoq", icon: FileText },
     { name: "Gestión de Incidencias", href: "/dashboard/reports", icon: AlertTriangle },
-    { name: "Análisis Organizacional", href: "/dashboard/departments", icon: Users },
+    { name: "Análisis Organizacional", href: "/dashboard/insights", icon: Users },
     { name: "Buzón de Análisis", href: "/dashboard/alerts", icon: Inbox },
     { name: "Seguimiento de Casos", href: "/dashboard/cases", icon: Shield },
   ];
@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               RH
             </div>
             <div className="flex flex-col flex-1 overflow-hidden">
-              <span className="text-sm font-bold text-white leading-tight truncate">Analista RR.HH.</span>
+              <span className="text-sm font-bold text-white leading-tight truncate">Analista de Seguridad</span>
               <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold truncate">Administrador</span>
             </div>
             <ChevronDown className={`w-4 h-4 ml-2 shrink-0 text-white/70 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {isProfileOpen && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
               <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-bold text-slate-800 truncate">Analista RR.HH.</p>
+                <p className="text-sm font-bold text-slate-800 truncate">Analista de Seguridad</p>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">admin@calmwork.com</p>
               </div>
               <div className="py-1">

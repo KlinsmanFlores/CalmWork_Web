@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, AreaChart, Area 
 } from "recharts";
-import { Users, AlertTriangle, Download, Building } from "lucide-react";
+import { Users, AlertTriangle, Download, Building, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const COLORS = ["#246672", "#6AB2BB", "#f59e0b", "#ef4444", "#8b5cf6", "#10b981", "#3b82f6"];
@@ -16,6 +16,10 @@ export default function DepartmentsAnalysis() {
   const [areaEvolutionData, setAreaEvolutionData] = useState<any[]>([]);
   const [kpis, setKpis] = useState({ topReports: '', topStress: '' });
   const [loading, setLoading] = useState(true);
+  
+  const [filterStress, setFilterStress] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
@@ -123,6 +127,21 @@ export default function DepartmentsAnalysis() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Areas");
     XLSX.writeFile(workbook, "Analisis_Areas_CalmWORK.xlsx");
   };
+
+  const filteredStats = statsData.filter(row => {
+    if (filterStress === 'all') return true;
+    if (filterStress === 'high') return row.estres > 60;
+    if (filterStress === 'medium') return row.estres > 30 && row.estres <= 60;
+    if (filterStress === 'low') return row.estres <= 30;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredStats.length / itemsPerPage);
+  const paginatedStats = filteredStats.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStress]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -238,35 +257,88 @@ export default function DepartmentsAnalysis() {
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
-              <th className="px-6 py-4 font-bold">Departamento</th>
-              <th className="px-6 py-4 font-bold">N° Reportes Anónimos</th>
-              <th className="px-6 py-4 font-bold">Alertas de IA (Chatbot)</th>
-              <th className="px-6 py-4 font-bold">Alertas Críticas</th>
-              <th className="px-6 py-4 font-bold">Nivel de Estrés</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {statsData.map((row, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 text-sm font-bold text-slate-800">{row.department}</td>
-                <td className="px-6 py-4 text-sm text-slate-600 font-medium">{row.reportes}</td>
-                <td className="px-6 py-4 text-sm text-slate-600 font-medium">{row.alertas}</td>
-                <td className="px-6 py-4 text-sm text-rose-600 font-bold">{row.criticas}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center">
-                    <div className="w-full bg-slate-200 rounded-full h-2.5 mr-3">
-                      <div className={`h-2.5 rounded-full ${row.estres > 60 ? 'bg-rose-500' : row.estres > 30 ? 'bg-amber-400' : 'bg-emerald-500'}`} style={{ width: `${row.estres}%` }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-slate-700">{row.estres}%</span>
-                  </div>
-                </td>
+        <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+          <h3 className="text-lg font-bold text-slate-800">Desglose por Departamento</h3>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={filterStress}
+              onChange={(e) => setFilterStress(e.target.value)}
+              className="text-sm border border-slate-300 rounded-md py-1.5 px-3 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6AB2BB] cursor-pointer"
+            >
+              <option value="all">Todos los niveles</option>
+              <option value="high">Estrés Alto (&gt; 60%)</option>
+              <option value="medium">Estrés Medio (31% - 60%)</option>
+              <option value="low">Estrés Bajo (0% - 30%)</option>
+            </select>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase tracking-wider">
+                <th className="px-6 py-4 font-bold">Departamento</th>
+                <th className="px-6 py-4 font-bold">N° Reportes Anónimos</th>
+                <th className="px-6 py-4 font-bold">Alertas de IA (Chatbot)</th>
+                <th className="px-6 py-4 font-bold">Alertas Críticas</th>
+                <th className="px-6 py-4 font-bold">Nivel de Estrés</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedStats.map((row, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-bold text-slate-800">{row.department}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">{row.reportes}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 font-medium">{row.alertas}</td>
+                  <td className="px-6 py-4 text-sm text-rose-600 font-bold">{row.criticas}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center">
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 mr-3">
+                        <div className={`h-2.5 rounded-full ${row.estres > 60 ? 'bg-rose-500' : row.estres > 30 ? 'bg-amber-400' : 'bg-emerald-500'}`} style={{ width: `${row.estres}%` }}></div>
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">{row.estres}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {paginatedStats.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-medium">
+                    No hay departamentos que coincidan con el filtro.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
+            <span className="text-sm text-slate-500">
+              Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredStats.length)} de {filteredStats.length} departamentos
+            </span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-medium text-slate-700 px-2">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

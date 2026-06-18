@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Shield, Download, FileText, CheckCircle2, Clock, Inbox, AlertTriangle } from "lucide-react";
+import { Shield, Download, FileText, CheckCircle2, Clock, Inbox, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import * as XLSX from "xlsx";
 
 export default function CasesOverview() {
   const [casesList, setCasesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'new' | 'in_progress' | 'resolved'>('all');
+  
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchData();
@@ -45,6 +48,23 @@ export default function CasesOverview() {
     setLoading(false);
   }
 
+  const updateStatus = async (id: string, newStatus: string) => {
+    // Optimistic UI update
+    setCasesList(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+    
+    // Database update
+    const { error } = await supabase
+      .from('reports')
+      .update({ status: newStatus })
+      .eq('id', id);
+      
+    if (error) {
+      console.error('Error updating status:', error);
+      // Revert optimistic update by refetching
+      fetchData();
+    }
+  };
+
   const exportToExcel = () => {
     if (casesList.length === 0) return;
     const exportData = casesList.map(r => ({
@@ -62,6 +82,12 @@ export default function CasesOverview() {
   };
 
   const filteredCases = casesList.filter(c => filter === 'all' ? true : c.status === filter);
+  const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
+  const paginatedCases = filteredCases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -104,12 +130,11 @@ export default function CasesOverview() {
                   <th className="px-6 py-4 font-semibold">Departamento</th>
                   <th className="px-6 py-4 font-semibold">Fecha</th>
                   <th className="px-6 py-4 font-semibold">Estado</th>
-                  <th className="px-6 py-4 font-semibold text-right">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCases.map((c, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 transition-colors group">
+                {paginatedCases.map((c, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors group border-b border-slate-50 last:border-0">
                     <td className="px-6 py-4">
                       <p className="text-sm font-bold text-slate-800">{c.module}</p>
                       <p className="text-xs text-slate-500 mt-1 truncate max-w-xs">{c.preview}</p>
@@ -117,23 +142,52 @@ export default function CasesOverview() {
                     <td className="px-6 py-4 text-sm font-medium text-slate-600">{c.department}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{c.date}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border shadow-sm ${
-                        c.status === 'new' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                        c.status === 'in_progress' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-                        'bg-emerald-100 text-emerald-800 border-emerald-200'
-                      }`}>
-                        {c.status === 'new' ? 'NUEVO' : c.status === 'in_progress' ? 'EN PROCESO' : 'RESUELTO'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="text-[#6AB2BB] hover:text-[#246672] text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                        Ver Detalles &rarr;
-                      </button>
+                      <select
+                        value={c.status}
+                        onChange={(e) => updateStatus(c.id, e.target.value)}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-md border shadow-sm cursor-pointer outline-none focus:ring-2 focus:ring-[#6AB2BB] ${
+                          c.status === 'new' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                          c.status === 'in_progress' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                          'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        }`}
+                      >
+                        <option value="new" className="bg-white text-slate-800">NUEVO</option>
+                        <option value="in_progress" className="bg-white text-slate-800">EN PROCESO</option>
+                        <option value="resolved" className="bg-white text-slate-800">RESUELTO</option>
+                      </select>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-white">
+                <span className="text-sm text-slate-500">
+                  Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredCases.length)} de {filteredCases.length} casos
+                </span>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-sm font-medium text-slate-700 px-2">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-64 flex flex-col items-center justify-center text-slate-400">

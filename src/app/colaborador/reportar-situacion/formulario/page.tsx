@@ -40,7 +40,7 @@ function FormularioReporte() {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Reporte enviado con éxito</h2>
         <p className="text-slate-600 mb-8 max-w-md">
-          Gracias por confiar en nosotros. Tu reporte ha sido registrado de forma segura y anónima. El equipo de Recursos Humanos lo revisará a la brevedad.
+          Gracias por confiar en nosotros. Tu reporte ha sido registrado de forma segura y anónima. El equipo de Seguridad lo revisará a la brevedad.
         </p>
         <button 
           onClick={() => router.push("/colaborador")}

@@ -325,7 +325,7 @@ export default function EmployeesPage() {
                   <option value="Operaciones">Operaciones</option>
                   <option value="Ventas">Ventas</option>
                   <option value="Tecnología (TI)">Tecnología (TI)</option>
-                  <option value="Recursos Humanos">Recursos Humanos</option>
+                  <option value="Seguridad">Seguridad</option>
                   <option value="Marketing">Marketing</option>
                   <option value="Finanzas">Finanzas</option>
                   <option value="Administración">Administración</option>

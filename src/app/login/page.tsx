@@ -62,7 +62,7 @@ export default function LoginPage() {
           CalmWORK
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
-          Panel Exclusivo para Recursos Humanos
+          Panel Exclusivo para Seguridad
         </p>
       </div>
 

@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { AlertTriangle, BrainCircuit, Activity, Download, MessageCircle, BarChart2, Flame } from "lucide-react";
+import { AlertTriangle, BrainCircuit, Activity, Download, MessageCircle, BarChart2, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ComposedChart, Legend } from "recharts";
 import * as XLSX from "xlsx";
 
 export default function InsightsOverview() {
   const [insightsList, setInsightsList] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
-  const [heatmapData, setHeatmapData] = useState<any[]>([]);
   const [urgencyTrendData, setUrgencyTrendData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination & Filter States
+  const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
@@ -40,7 +44,7 @@ export default function InsightsOverview() {
         let totalSent = 0;
         let criticalCases = 0;
         const topicCounts: Record<string, number> = {};
-        const deptSentiment: Record<string, { sum: number, count: number }> = {};
+        const sentimentDist = { negativo: 0, neutro: 0, positivo: 0 };
         const urgencyMonthly: Record<string, { urgentes: number, normales: number }> = {};
 
         list.forEach(i => {
@@ -48,13 +52,10 @@ export default function InsightsOverview() {
           if (i.urgency === 'critical' || i.urgency === 'high') criticalCases++;
           topicCounts[i.topic] = (topicCounts[i.topic] || 0) + 1;
 
-          // Heatmap Data (Sentiment by Dept)
-          const dept = i.department;
-          if (dept && dept !== 'Sin asignar') {
-            if (!deptSentiment[dept]) deptSentiment[dept] = { sum: 0, count: 0 };
-            deptSentiment[dept].sum += i.sentiment;
-            deptSentiment[dept].count++;
-          }
+          // Sentiment Distribution
+          if (i.sentiment <= 3) sentimentDist.negativo++;
+          else if (i.sentiment <= 6) sentimentDist.neutro++;
+          else sentimentDist.positivo++;
 
           // Urgency Trend Data
           if (!urgencyMonthly[i.monthKey]) urgencyMonthly[i.monthKey] = { urgentes: 0, normales: 0 };
@@ -65,28 +66,9 @@ export default function InsightsOverview() {
           }
         });
 
-        // Pareto Chart Data
-        const sortedTopics = Object.keys(topicCounts).map(t => ({
-          name: t,
-          count: topicCounts[t]
-        })).sort((a, b) => b.count - a.count);
 
-        let cumulative = 0;
-        const totalTopicsCount = sortedTopics.reduce((acc, curr) => acc + curr.count, 0);
-        const paretoData = sortedTopics.map(t => {
-          cumulative += t.count;
-          return {
-            ...t,
-            cumulativePercentage: Math.round((cumulative / totalTopicsCount) * 100)
-          };
-        }).slice(0, 7);
 
-        // Heatmap Processing
-        const hmData = Object.keys(deptSentiment).map(d => ({
-          department: d,
-          avgSentiment: Math.round((deptSentiment[d].sum / deptSentiment[d].count) * 10) / 10
-        }));
-        setHeatmapData(hmData);
+
 
         // Urgency Monthly Processing
         const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -103,8 +85,7 @@ export default function InsightsOverview() {
         setAnalytics({
           avgSentiment: list.length > 0 ? (totalSent / list.length).toFixed(1) : 0,
           criticalCases,
-          totalCases: list.length,
-          paretoData
+          totalCases: list.length
         });
 
         setInsightsList(list);
@@ -115,6 +96,15 @@ export default function InsightsOverview() {
 
     fetchData();
   }, []);
+
+  const filteredList = insightsList.filter(i => urgencyFilter === 'all' || i.urgency === urgencyFilter);
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+  const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setUrgencyFilter(e.target.value);
+    setCurrentPage(1);
+  };
 
   const exportToExcel = () => {
     if (insightsList.length === 0) return;
@@ -145,22 +135,13 @@ export default function InsightsOverview() {
     return 'text-emerald-600 font-semibold';
   };
 
-  // Heatmap Color Generator (1-10 scale. Lower = Redder, Higher = Greener)
-  const getHeatmapBg = (score: number) => {
-    if (score <= 3) return 'bg-rose-500';
-    if (score <= 4) return 'bg-rose-400';
-    if (score <= 5) return 'bg-orange-400';
-    if (score <= 6) return 'bg-amber-300';
-    if (score <= 7) return 'bg-lime-400';
-    if (score <= 8) return 'bg-emerald-400';
-    return 'bg-emerald-600';
-  };
+
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-end border-b border-slate-200 pb-5">
         <div>
-          <h2 className="text-3xl font-extrabold text-[#246672] tracking-tight">Alertas Predictivas IA</h2>
+          <h2 className="text-3xl font-extrabold text-[#246672] tracking-tight">Análisis Organizacional</h2>
         </div>
         <button
           onClick={exportToExcel}
@@ -175,82 +156,10 @@ export default function InsightsOverview() {
       {/* KPI & Analytics */}
       {!loading && analytics && (
         <>
-          {/* Top Row: KPIs and Pareto */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex items-center group">
-                  <div className="bg-slate-700 p-4 rounded text-white mr-5 shadow-sm"><MessageCircle size={24} /></div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Evaluaciones IA</p>
-                    <h4 className="text-3xl font-extrabold text-slate-800">{analytics.totalCases}</h4>
-                  </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex items-center group">
-                  <div className="bg-rose-500 p-4 rounded text-white mr-5 shadow-sm"><AlertTriangle size={24} /></div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Casos Urgentes</p>
-                    <h4 className="text-3xl font-extrabold text-rose-600">{analytics.criticalCases}</h4>
-                  </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex items-center group">
-                  <div className="bg-amber-500 p-4 rounded text-white mr-5 shadow-sm"><Activity size={24} /></div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500 mb-1 uppercase tracking-wider">Sentimiento Global</p>
-                    <h4 className="text-3xl font-extrabold text-slate-800">{analytics.avgSentiment} <span className="text-sm text-slate-400 font-medium">/ 10</span></h4>
-                  </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-2 bg-white p-6 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-[#246672]"></div>
-              <div className="flex items-center mb-4">
-                  <BarChart2 className="h-5 w-5 text-[#246672] mr-2" />
-                  <h3 className="text-lg font-bold text-slate-800">Top Problemas Detectados (Pareto)</h3>
-              </div>
-              <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={analytics.paretoData} margin={{ top: 20, right: 30, left: -20, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} angle={-15} textAnchor="end" />
-                      <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} />
-                      <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} domain={[0, 100]} />
-                      <RechartsTooltip contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0'}} />
-                      <Legend wrapperStyle={{paddingTop: '20px'}} />
-                      <Bar yAxisId="left" dataKey="count" name="Frecuencia" fill="#6AB2BB" radius={[4, 4, 0, 0]} barSize={40} />
-                      <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" name="% Acumulado" stroke="#f59e0b" strokeWidth={3} dot={{r: 4, fill: '#f59e0b'}} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Row: Heatmap & Stacked Bars */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
-              <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center">
-                    <Flame className="h-5 w-5 text-amber-500 mr-2" />
-                    Heatmap de Sentimiento (Por Área)
-                  </h3>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {heatmapData.map((d, idx) => (
-                  <div key={idx} className={`${getHeatmapBg(d.avgSentiment)} p-4 rounded-lg flex flex-col justify-center items-center text-white shadow-sm transition-transform hover:scale-105`}>
-                    <span className="text-2xl font-extrabold">{d.avgSentiment}</span>
-                    <span className="text-xs font-medium uppercase tracking-wider mt-1 text-center bg-black/10 px-2 py-1 rounded w-full truncate" title={d.department}>{d.department}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 flex items-center justify-between text-xs text-slate-400 font-medium">
-                <span>Rojo: Negativo (0-4)</span>
-                <span>Amarillo: Neutro (5-6)</span>
-                <span>Verde: Positivo (7-10)</span>
-              </div>
-            </div>
-
+          {/* Bottom Row: Stacked Bars */}
+          <div className="grid grid-cols-1 gap-6">
             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
               <div className="mb-6">
@@ -279,24 +188,42 @@ export default function InsightsOverview() {
 
       {/* Tabla Original */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center">
+        <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center">
             <BrainCircuit className="h-5 w-5 mr-2 text-[#6AB2BB]" />
-            Bandeja Detallada de Alertas
-          </h3>
-          <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium">
-            {insightsList.length} Alertas detectadas
-          </span>
+            <h3 className="text-lg font-bold text-slate-800">
+              Bandeja Detallada de Alertas
+            </h3>
+            <span className="ml-3 text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium">
+              {filteredList.length} {filteredList.length === 1 ? 'Alerta' : 'Alertas'} detectadas
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select 
+              value={urgencyFilter}
+              onChange={handleFilterChange}
+              className="text-sm border border-slate-300 rounded-md py-1.5 px-3 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6AB2BB] focus:border-transparent cursor-pointer"
+            >
+              <option value="all">Todas las urgencias</option>
+              <option value="critical">Crítica</option>
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
         </div>
         
         {loading ? (
           <div className="h-64 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6AB2BB]"></div>
           </div>
-        ) : insightsList.length > 0 ? (
-          <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto p-2">
-            {insightsList.map((i, idx) => (
-              <div key={idx} className="p-4 hover:bg-slate-50 transition-colors rounded-xl m-2 border border-transparent hover:border-slate-200 shadow-sm">
+        ) : filteredList.length > 0 ? (
+          <>
+            <div className="divide-y divide-slate-100 p-2">
+              {paginatedList.map((i, idx) => (
+                <div key={idx} className="p-4 hover:bg-slate-50 transition-colors rounded-xl m-2 border border-transparent hover:border-slate-200 shadow-sm">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border shadow-sm ${getUrgencyColor(i.urgency)} uppercase tracking-wider`}>
@@ -333,8 +260,37 @@ export default function InsightsOverview() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                <span className="text-sm text-slate-500">
+                  Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredList.length)} de {filteredList.length} alertas
+                </span>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <span className="text-sm font-medium text-slate-700 px-2">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
            <div className="h-64 flex flex-col items-center justify-center text-slate-400">
             <BrainCircuit className="h-12 w-12 mb-4 opacity-30 text-[#6AB2BB]" />
