@@ -602,7 +602,7 @@ export default function CopsoqOverview() {
                       contentStyle={{borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
                       formatter={(value: any, name: any, props: any) => [`${value} colaboradores`, 'Total']}
                     />
-                    <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={24} onClick={(data) => setSelectedScoreFilter(selectedScoreFilter === data.score ? null : data.score)} style={{cursor: 'pointer'}}>
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={24} onClick={(data: any) => setSelectedScoreFilter(selectedScoreFilter === data.score ? null : data.score)} style={{cursor: 'pointer'}}>
                       {questionDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} opacity={selectedScoreFilter !== null && selectedScoreFilter !== entry.score ? 0.3 : 1} />
                       ))}
